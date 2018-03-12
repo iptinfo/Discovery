@@ -3,6 +3,8 @@
 # AOS, a ConvergeOne Company
 # 913-307-2330
 #
+# This script is being shared without warranty or offer of support.  Test in a lab, backup your system.
+#
 # This script has been tested on MacOS High Sierra and Windows 7 using Python 3.6.4, zeep, suds-jurko, xlsxwriter and
 # the CUCM AXL files (v10.5 and 11.5).  After installing Python3 from python.org, install the modules using the
 # commands below using your OS CLI.
