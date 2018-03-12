@@ -16,6 +16,13 @@
 #  python -m pip install suds-jurko
 #  python -m pip install XlsxWriter
 #
+#  or
+#
+#  easy_install pip
+#  easy_install zeep
+#  easy_install suds-jurko
+#  easy_install XlsxWriter
+#
 #  Download the CUCM AXL Toolkit from the Application >> Plugins menu in CUCM. Save this
 #  python script and the extract CUCM AXL 'axlsqltoolkit' directory structure in the same directory.
 #  Execute this script from the CLI with the command 'python3 discovery.py' and follow the prompting
