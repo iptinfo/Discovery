@@ -3,8 +3,6 @@
 # AOS, a ConvergeOne Company
 # 913-307-2330
 #
-# This script is being shared without warranty or offer of support.  Test in a lab, backup your system.
-#
 # This script has been tested on MacOS High Sierra and Windows 7 using Python 3.6.4, zeep, suds-jurko, xlsxwriter and
 # the CUCM AXL files (v10.5 and 11.5).  After installing Python3 from python.org, install the modules using the
 # commands below using your OS CLI.
@@ -15,13 +13,6 @@
 #  python -m pip install zeep
 #  python -m pip install suds-jurko
 #  python -m pip install XlsxWriter
-#
-#  or
-#
-#  easy_install pip
-#  easy_install zeep
-#  easy_install suds-jurko
-#  easy_install XlsxWriter
 #
 #  Download the CUCM AXL Toolkit from the Application >> Plugins menu in CUCM. Save this
 #  python script and the extract CUCM AXL 'axlsqltoolkit' directory structure in the same directory.
@@ -35,70 +26,21 @@ import getpass
 import os
 import time
 import datetime
-#import sys
-#import urllib
+import sys
+import urllib.error
 import xlsxwriter
 from suds.xsd.doctor import Import
 from suds.xsd.doctor import ImportDoctor
 from suds.client import Client
 from collections import Counter
-from operator import itemgetter
 
 ssl._create_default_https_context = ssl._create_unverified_context
-
-
-# load login module, prompt user for AXL version, CUCM server address and Discovery
-# local file path.
-ospath = os.getcwd()
-print("")
-print("Welcome to the AOS, a ConvergeOne Company, CUCM Discovery Tool.")
-print("")
-print("")
-selection = input("Press ENTER to continue...")
-print("")
-print("")
-clientname = input('Please Enter the Client Name: ')
-ccmversion = input('Please input the CCM major version(e.g. 10.5): ')
-if ccmversion == '9.0':
-    print()
-elif ccmversion == '9.1':
-    print()
-elif ccmversion == '10.0':
-    print()
-elif ccmversion == '10.5':
-    print()
-elif ccmversion == '11.0':
-    print()
-elif ccmversion == '11.5':
-    print()
-else:
-    ccmversion == 'Current'
-if os.name == "nt":
-    ospath = (ospath.replace('\\','/'))
-    wsdl = 'file:///' + ospath + '/axlsqltoolkit/schema/' + ccmversion + '/AXLAPI.wsdl'
-    clientpath = ospath + '/' + clientname + '/'
-elif os.name == "posix":
-    wsdl = 'file://' + ospath + '/axlsqltoolkit/schema/' + ccmversion + '/AXLAPI.wsdl'
-    clientpath = ospath + '/' + clientname + '/'
-    time.sleep(1)
-else:
-    clientpath = ospath + '/' + clientname + '/'
-dt = datetime.datetime.now()
-dt = dt.replace(microsecond=0)
-strdt = str(dt)
-strdt = (strdt.replace(':', '').replace('-','').replace(' ','').replace('.',''))
-workbook = xlsxwriter.Workbook(clientpath + clientname + '_discovery_' + strdt + '.xlsx')
-cmserver = input('Please enter the CUCM Server IP address: ')
-discoverall = False
-cmport = '8443'
-location = 'https://' + cmserver + ':' + cmport + '/axl/'
-createDir(wsdl, location, clientpath, workbook)
 
 ####
 # get current working diretory to generate path for saving applicaiton output
 # and creates client directory.
 ####
-def createDir(wsdl, location, clientpath, workbook):
+def createDir(wsdl,location,clientpath,workbook):
     cwd = os.getcwd()
     isDirectory = os.path.isdir(clientpath)
     print("")
@@ -119,7 +61,7 @@ def createDir(wsdl, location, clientpath, workbook):
     print("Final Path to configuration files: " + clientpath )
     print("")
     time.sleep(.5)
-    login(wsdl, location, clientpath, workbook)
+    login(wsdl,location,clientpath,workbook)
 
 ####
 # Prompt user for authentication info to authenticate via AXL with CUCM server.  Create
@@ -127,7 +69,7 @@ def createDir(wsdl, location, clientpath, workbook):
 # and role info, then query each node for active software version.
 ####
 
-def login(wsdl, location, clientpath, workbook):
+def login(wsdl,location,clientpath,workbook):
     tns = 'http://schemas.cisco.com/ast/soap/'
     imp = Import('http://schemas.xmlsoap.org/soap/encoding/', 'http://schemas.xmlsoap.org/soap/encoding/')
     imp.filter.add(tns)
@@ -135,19 +77,19 @@ def login(wsdl, location, clientpath, workbook):
     try:
         username = input('Please Enter the CUCM username: ')
         password = getpass.getpass('Please Enter the CUCM password: ')
-        client = Client(wsdl, location=location, username=username, password=password, plugins=[ImportDoctor(imp)])
+        client = Client(wsdl,location=location, username=username, password=password, plugins=[ImportDoctor(imp)])
         result = client.service.listProcessNode({'name':'%'},{'name':'','nodeUsage':'','processNodeRole':''})
     except Exception as e:
         if str(e) == "(401" + "," + " 'Unauthorized')":
             print("")
             print("Authentication failed!  Please try again. ")
             print("")
-            login(wsdl, location, clientpath, workbook)
+            login(wsdl,location,clientpath, workbook)
         else:
             print("")
             print(e + "Please try again. ")
             print("")
-            login(wsdl, location, clientpath, workbook)
+            login(wsdl,location,clientpath, workbook)
     else:
         print("")
         print("Authentication Successful! ")
@@ -174,9 +116,9 @@ def login(wsdl, location, clientpath, workbook):
         for node in result['return']['processNode']:
             print (str(node['name']) + ',' + str(node['nodeUsage']) + ',' + str(node['processNodeRole']))
             cell = cell +1
-            worksheet_nodes.write("A" + str(cell), str(node['name']))
-            worksheet_nodes.write("B" + str(cell), str(node['nodeUsage']))
-            worksheet_nodes.write("C" + str(cell), str(node['processNodeRole']))
+            worksheet_nodes.write("A" + str(cell),str(node['name']))
+            worksheet_nodes.write("B" + str(cell),str(node['nodeUsage']))
+            worksheet_nodes.write("C" + str(cell),str(node['processNodeRole']))
             count[node.nodeUsage] += 1
             hostlist.append(node['name'])
         countClean = str(count)
@@ -190,7 +132,7 @@ def login(wsdl, location, clientpath, workbook):
                 print("")
                 location = 'https://' + host + ':' + cmport + '/realtimeservice/services/RisPort'
                 wsdl = 'https://' + host + ':' + cmport + '/realtimeservice/services/RisPort?wsdl'
-                client = Client(wsdl, location=location, username=username, password=password, plugins=[ImportDoctor(imp)])
+                client = Client(wsdl,location=location, username=username, password=password, plugins=[ImportDoctor(imp)])
                 result = client.service.GetServerInfo()
             except:
                 if host == "EnterpriseWideData":
@@ -213,54 +155,15 @@ def login(wsdl, location, clientpath, workbook):
         print("")
         location = 'https://' + cmserver + ':' + cmport + '/axl/'
         wsdl = origwsdl
-        client = Client(wsdl, location=location, username=username, password=password, plugins=[ImportDoctor(imp)])
-        worksheet_licenses = workbook.add_worksheet('Licensing')
-        result = client.service.executeSQLQuery('SELECT name,value FROM TABLE (FUNCTION LicenseTotals()) (pkid,name,value,UserValue,DeviceValue)')
-#        print(result)
-        worksheet_licenses.set_column('A:B', 30)
-        worksheet_licenses.write("A1", "License Type", format)
-        worksheet_licenses.write("B1", "Licenses Consumed", format)
-        cell = 1
-        try:
-            #for node in result['return'][0]:
-            for node in sorted(result['return'][0], key=itemgetter('name')):
-                cell = cell+1
-        #    result = client.service.executeSQLQuery('select * from device')
-                print(str(node['name']) + "," + str(node['value']))
-                worksheet_licenses.write("A" + str(cell),str(node['name']))
-                worksheet_licenses.write("B" + str(cell),str(node['value']))
-        #client = Client(wsdl, location=location,transport=HttpAuthenticated(username=username, password=password))
-        #result = client.service.listPhone({'name':'SEP%'},{'name':'','model':''})
-    #    for node in result['return']:
-    #        print (result['return'])
-        except Exception as e:
-            print(e)
-            #print(client)
-        else:
-            print("")
-        print("Request Completed.")
-        print("")
-        ############################################################
-        #  Get service parameters from each Node
-        ############################################################
-        #client = Client(wsdl, location=location, transport = HttpAuthenticated(username=username, password=password))
-        result = ""
-        worksheet_serviceparameters = workbook.add_worksheet('Service Parameters')
-        for host in hostlist:
-            try:
-                result = client.service.listServiceParameter({'processNodeName':'%'}, {'service':'', 'name':'', 'value':''})
-                print (str(node['service']) + "," + str(node['name']) + "," + str(node['value']))
-            except Exception as e:
-                print(e)
-            else:
-                print("")
-
-        mainMenu(wsdl, location, clientpath, username, password, imp, workbook)
+        client = Client(wsdl,location=location, username=username, password=password, plugins=[ImportDoctor(imp)])
+        mainMenu(wsdl,location,clientpath,username,password,imp,workbook)
+    finally:
+        print()
 
 ####
 # present menu options to user
 ####
-def mainMenu(wsdl, location, clientpath, username, password, imp, workbook):
+def mainMenu(wsdl,location,clientpath,username,password,imp,workbook):
     print("")
     print("Select from the following items: " + '\n')
     #print("1:  Phones" + '\n')
@@ -277,26 +180,26 @@ def mainMenu(wsdl, location, clientpath, username, password, imp, workbook):
     if selection.isdigit():
         if selection == "1":
             discoverall = False
-            phones(wsdl, location, clientpath, username, password, imp, discoverall, workbook)
+            phones(wsdl,location,clientpath,username,password,imp,discoverall,workbook)
         elif selection == "2":
             discoverall = False
-            gateways(wsdl, location, clientpath, username, password, imp, discoverall,workbook)
+            gateways(wsdl,location,clientpath,username,password,imp,discoverall,workbook)
         elif selection == "3":
             discoverall = False
-            cti(wsdl, location, clientpath, username, password, imp, discoverall,workbook)
+            cti(wsdl,location,clientpath,username,password,imp,discoverall,workbook)
         elif selection == "4":
             discoverall = False
-            hunt(wsdl, location, clientpath, username, password, imp, discoverall,workbook)
+            hunt(wsdl,location,clientpath,username,password,imp,discoverall,workbook)
         elif selection == "5":
             discoverall = False
-            media(wsdl, location, clientpath, username, password, imp, discoverall,workbook)
+            media(wsdl,location,clientpath,username,password,imp,discoverall,workbook)
         elif selection == "9":
             discoverall = True
-            phones(wsdl, location, clientpath, username, password, imp, discoverall,workbook)
+            phones(wsdl,location,clientpath,username,password,imp,discoverall,workbook)
         else:
             print("Invalid selection, try again!")
             time.sleep(2)
-            mainMenu(wsdl, location, clientpath, username, password, imp,workbook)
+            mainMenu(wsdl,location,clientpath,username,password,imp,workbook)
     else:
         if selection == "q":
             workbook.close()
@@ -307,18 +210,18 @@ def mainMenu(wsdl, location, clientpath, username, password, imp, workbook):
         else:
             print("Invalid selection, try again!")
             time.sleep(2)
-            mainMenu(wsdl, location, clientpath, username, password, imp,workbook)
+            mainMenu(wsdl,location,clientpath,username,password,imp,workbook)
 
 ####
 # Query CUCM via AXL for a list of all SEP phone devices. Create worksheet tab in excel
 # workbook and write devicename, description, model and protocol to the worksheet.
 ####
-def phones(wsdl, location, clientpath, username, password, imp, discoverall,workbook):
+def phones(wsdl,location,clientpath,username,password,imp,discoverall,workbook):
     print("")
     print("Querying CUCM for a list of phone devices.")
     print("")
     worksheet_phones = workbook.add_worksheet('Phone Devices')
-    client = Client(wsdl, location=location, username=username, password=password, plugins=[ImportDoctor(imp)])
+    client = Client(wsdl,location=location, username=username, password=password, plugins=[ImportDoctor(imp)])
     result = client.service.listPhone({'name':'SEP%'},{'name':'','description':'','model':'','protocol':''})
     dt = datetime.datetime.now()
     dt = dt.replace(microsecond=0)
@@ -333,8 +236,7 @@ def phones(wsdl, location, clientpath, username, password, imp, discoverall,work
     worksheet_phones.write("B1","Description", format)
     worksheet_phones.write("C1","Phone Model", format)
     worksheet_phones.write("D1","Protocol", format)
-    for node in sorted(result['return']['phone'], key=itemgetter('model')):
-    #for node in result['return']['phone']:
+    for node in result['return']['phone']:
         cell = cell +1
         worksheet_phones.write("A" + str(cell),str(node['name']))
         worksheet_phones.write("B" + str(cell),str(node['description']))
@@ -353,21 +255,21 @@ def phones(wsdl, location, clientpath, username, password, imp, discoverall,work
     print("Command completed successfully! ")
     print("")
     if discoverall:
-        gateways(wsdl, location, clientpath, username, password, imp, discoverall,workbook)
+        gateways(wsdl,location,clientpath,username,password,imp,discoverall,workbook)
     else:
-        mainMenu(wsdl, location, clientpath, username, password, imp,workbook)
+        mainMenu(wsdl,location,clientpath,username,password,imp,workbook)
 
 ####
 # Query CUCM via AXL for a list of gateway devices. Create worksheet tab in excel
 # workbook and write gateway name, description, model and protocol to the worksheet.
 ####
-def gateways(wsdl, location, clientpath, username, password, imp, discoverall,workbook):
+def gateways(wsdl,location,clientpath,username,password,imp,discoverall,workbook):
     print("")
     print("Querying CUCM for a list of gateways.")
     print("")
     worksheet_gateways = workbook.add_worksheet('Gateway Devices')
-    client = Client(wsdl, location=location, username=username, password=password, plugins=[ImportDoctor(imp)])
-    result = client.service.listGateway({'domainName':'%'}, {'domainName':'', 'description':'', 'product':'', 'protocol':''})
+    client = Client(wsdl,location=location, username=username, password=password, plugins=[ImportDoctor(imp)])
+    result = client.service.listGateway({'domainName':'%'},{'domainName':'','description':'','product':'','protocol':''})
     dt = datetime.datetime.now()
     strdt = str(dt)
     strdt = (strdt.replace(':', '').replace('-','').replace(' ','').replace('.',''))
@@ -402,20 +304,20 @@ def gateways(wsdl, location, clientpath, username, password, imp, discoverall,wo
     print("Command completed successfully! ")
     print("")
     if discoverall:
-        cti(wsdl, location, clientpath, username, password, imp, discoverall,workbook)
+        cti(wsdl,location,clientpath,username,password,imp,discoverall,workbook)
     else:
-        mainMenu(wsdl, location, clientpath, username, password, imp,workbook)
+        mainMenu(wsdl,location,clientpath,username,password,imp,workbook)
 
 ####
 # Query via AXL for a list of CTI Route Points and CTI ports.  Create worksheet in workbook
 # and save Route Point and Port name and description to the worksheet.
 ####
-def cti(wsdl, location, clientpath, username, password, imp, discoverall,workbook):
+def cti(wsdl,location,clientpath,username,password,imp,discoverall,workbook):
     print("")
     print("Querying CUCM for a list of CTI Route Points.")
     print("")
     worksheet_cti = workbook.add_worksheet('CTI Devices')
-    client = Client(wsdl, location=location, username=username, password=password, plugins=[ImportDoctor(imp)])
+    client = Client(wsdl,location=location, username=username, password=password, plugins=[ImportDoctor(imp)])
     result = client.service.listCtiRoutePoint({'name':'%'},{'name':'','description':''})
     count = Counter()
     countCell = Counter()
@@ -477,20 +379,20 @@ def cti(wsdl, location, clientpath, username, password, imp, discoverall,workboo
     print("Command completed successfully! ")
     print("")
     if discoverall:
-        hunt(wsdl, location, clientpath, username, password, imp, discoverall,workbook)
+        hunt(wsdl,location,clientpath,username,password,imp,discoverall,workbook)
     else:
-        mainMenu(wsdl, location, clientpath, username, password, imp,workbook)
+        mainMenu(wsdl,location,clientpath,username,password,imp,workbook)
 
 ####
 # Query CUCM for a list of hunt pilots, create worksheet tab in workbook and save
 # hunt pilot DN and Description to the worksheet.
 ####
-def hunt(wsdl, location, clientpath, username, password, imp, discoverall,workbook):
+def hunt(wsdl,location,clientpath,username,password,imp,discoverall,workbook):
     print("")
     print("Querying CUCM for a list of hunt pilots.")
     print("")
     worksheet_hunt = workbook.add_worksheet('Hunt Devices')
-    client = Client(wsdl, location=location, username=username, password=password, plugins=[ImportDoctor(imp)])
+    client = Client(wsdl,location=location, username=username, password=password, plugins=[ImportDoctor(imp)])
     result = client.service.listHuntPilot({'pattern':'%'},{'pattern':'','description':'','huntListName':''})
     dt = datetime.datetime.now()
     strdt = str(dt)
@@ -520,15 +422,15 @@ def hunt(wsdl, location, clientpath, username, password, imp, discoverall,workbo
     print("Command completed successfully! ")
     print("")
     if discoverall:
-        media(wsdl, location, clientpath, username, password, imp, discoverall,workbook)
+        media(wsdl,location,clientpath,username,password,imp,discoverall,workbook)
     else:
-        mainMenu(wsdl, location, clientpath, username, password, imp,workbook)
+        mainMenu(wsdl,location,clientpath,username,password,imp,workbook)
 
 ####
 # Query CUCM via AXL for a list of media devices, including CFB, Transcoders and MTP Devices.
 # Create worksheet tab in workbook and save meda device name and type to the worksheet.
 ####
-def media(wsdl, location, clientpath, username, password, imp, discoverall,workbook):
+def media(wsdl,location,clientpath,username,password,imp,discoverall,workbook):
 
     ####
     # CONFERENCE BRIDGES
@@ -538,7 +440,7 @@ def media(wsdl, location, clientpath, username, password, imp, discoverall,workb
     print("Querying CUCM for a list of conference bridges.")
     print("")
     worksheet_media = workbook.add_worksheet('Media Devices')
-    client = Client(wsdl, location=location, username=username, password=password, plugins=[ImportDoctor(imp)])
+    client = Client(wsdl,location=location, username=username, password=password, plugins=[ImportDoctor(imp)])
     result = client.service.listConferenceBridge({'name':'%'},{'name':'','product':''})
     dt = datetime.datetime.now()
     strdt = str(dt)
@@ -645,6 +547,47 @@ def media(wsdl, location, clientpath, username, password, imp, discoverall,workb
     if discoverall:
         print("Cluster Discovery Completed!")
         workbook.close()
-        mainMenu(wsdl, location, clientpath, username, password, imp, workbook)
+        mainMenu(wsdl,location,clientpath,username,password,imp,workbook)
     else:
-        mainMenu(wsdl, location, clientpath, username, password, imp, workbook)
+        mainMenu(wsdl,location,clientpath,username,password,imp,workbook)
+
+# load login module, prompt user for AXL version, CUCM server address and Discovery
+# local file path.
+ospath = os.getcwd()
+print("")
+clientname = input('Please Enter the Client Name: ')
+ccmversion = input('Please input the CCM major version(e.g. 10.5): ')
+if ccmversion == '9.0':
+    print()
+elif ccmversion == '9.1':
+    print()
+elif ccmversion == '10.0':
+    print()
+elif ccmversion == '10.5':
+    print()
+elif ccmversion == '11.0':
+    print()
+elif ccmversion == '11.5':
+    print()
+else:
+    ccmversion == 'Current'
+if os.name == "nt":
+    ospath = (ospath.replace('\\','/'))
+    wsdl = 'file:///' + ospath + '/axlsqltoolkit/schema/' + ccmversion + '/AXLAPI.wsdl'
+    clientpath = ospath + '/' + clientname + '/'
+elif os.name == "posix":
+    wsdl = 'file://' + ospath + '/axlsqltoolkit/schema/' + ccmversion + '/AXLAPI.wsdl'
+    clientpath = ospath + '/' + clientname + '/'
+    time.sleep(1)
+else:
+    clientpath = ospath + '/' + clientname + '/'
+dt = datetime.datetime.now()
+dt = dt.replace(microsecond=0)
+strdt = str(dt)
+strdt = (strdt.replace(':', '').replace('-','').replace(' ','').replace('.',''))
+workbook = xlsxwriter.Workbook(clientpath + clientname + '_discovery_' + strdt + '.xlsx')
+cmserver = input('Please enter the CUCM Server IP address: ')
+discoverall = False
+cmport = '8443'
+location = 'https://' + cmserver + ':' + cmport + '/axl/'
+createDir(wsdl,location,clientpath,workbook)
