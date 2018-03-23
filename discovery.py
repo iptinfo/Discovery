@@ -34,6 +34,7 @@ from suds.xsd.doctor import Import
 from suds.xsd.doctor import ImportDoctor
 from suds.client import Client
 from collections import Counter
+from operator import itemgetter
 
 ssl._create_default_https_context = ssl._create_unverified_context
 
@@ -154,12 +155,46 @@ def login(wsdl,location,clientpath,workbook):
                 print("")
         print("")
         print("")
+    try:
         location = 'https://' + cmserver + ':' + cmport + '/axl/'
         wsdl = origwsdl
+        worksheet_licensing = workbook.add_worksheet('Licensing')
         client = Client(wsdl,location=location, username=username, password=password, plugins=[ImportDoctor(imp)])
-        mainMenu(wsdl,location,clientpath,username,password,imp,workbook)
-    finally:
-        print()
+        result = client.service.executeSQLQuery('SELECT name,value FROM TABLE (FUNCTION LicenseTotals()) (pkid,name,value,UserValue,DeviceValue)')
+        format = workbook.add_format({'bold': True, 'bg_color': 'silver', 'align': 'center'})
+        worksheet_licensing.set_column('A:B', 30)
+        worksheet_licensing.write("A1", "License Class", format)
+        worksheet_licensing.write("B1", "Licenses Used", format)
+        print("-----------------------------------------------")
+        cell = 1
+        for node in sorted(result['return'][0], key=itemgetter('name')):
+    #    result = client.service.executeSQLQuery('select * from device')
+            #countLicenseType.append(node)
+            #print(str(node['name']) + "," + str(node['value']))
+            #print(node)
+            cell = cell +1
+            print(str(node['name']) + "," + str(node['value']))
+            print("-----------------------------------------------")
+            worksheet_licensing.write("A" + str(cell),str(node['name']))
+            worksheet_licensing.write("B" + str(cell),str(node['value']))
+    #        print(countLicenseType[0]['name'] + "," + countLicenseType[0]['value'] + "*")
+        #client = Client(wsdl,location=location,transport=HttpAuthenticated(username=username,password=password))
+        #result = client.service.listPhone({'name':'SEP%'},{'name':'','model':''})
+    #    for node in result['return']:
+    #        print (result['return'])
+    except Exception as e:
+        print(e)
+    #print(client)
+    else:
+        print("")
+    #print(countLicenseType)
+    #print(sorted(zip(countLicenseType.name, countLicenseType.value)))
+    print("*****************")
+    #print(countLicenseType)
+    print("*****************")
+    #print(sorted(zip(countLicenseType)))
+    print("Request Completed.")
+    mainMenu(wsdl,location,clientpath,username,password,imp,workbook)
 
 ####
 # present menu options to user
@@ -356,7 +391,7 @@ def cti(wsdl,location,clientpath,username,password,imp,discoverall,workbook):
     worksheet_cti.write("C" + str(cell),"Phone Model", format)
     if result['return'] == "":
         print("No CTI Port devices configured. ")
-        #status.write("No CTI Port devices configured." + '\n')
+        #status.write("No No CTI Port devices configured." + '\n')
         print("")
     else:
         modelCTI = []
@@ -592,3 +627,4 @@ discoverall = False
 cmport = '8443'
 location = 'https://' + cmserver + ':' + cmport + '/axl/'
 createDir(wsdl,location,clientpath,workbook)
+
