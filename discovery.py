@@ -19,7 +19,7 @@
 #  to perform a discovery of the CUCM/IMP cluster.
 #
 #  This scripts queries CUCM/IMP and does not write to either system.  No warranties, assurances or 
-#  support are being offered or implied.  Test thoroughly on non-productionprior to using in production. 
+#  support are being offered or implied.  Test thoroughly on non-production prior to using in production. 
 ####
 
 import ssl
