@@ -356,7 +356,7 @@ def cti(wsdl,location,clientpath,username,password,imp,discoverall,workbook):
     worksheet_cti.write("C" + str(cell),"Phone Model", format)
     if result['return'] == "":
         print("No CTI Port devices configured. ")
-        #status.write("No No CTI Port devices configured." + '\n')
+        #status.write("No CTI Port devices configured." + '\n')
         print("")
     else:
         modelCTI = []
